@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SPIDER-MAN: NO WAY HOME — Ultimate 3D Experience</title>
+<title>SPIDER-MAN — Ultimate 3D Experience</title>
 <style>
   :root{
     --red:#e62429; --red-glow:#ff2d35; --blue:#1a3a8f; --dark:#05060a;
@@ -166,9 +166,9 @@
   <div id="viewport"></div>
   <div class="vignette"></div>
   <div class="hero-title">
-    <div class="eyebrow">Spider-Man: No Way Home · 3D Experience</div>
+    <div class="eyebrow">Friendly Neighborhood · 3D Experience</div>
     <h1>SPIDER-<br>MAN</h1>
-    <p>Real-time WebGL hero. Drag to orbit, scroll to zoom — rendered live in your browser with cinematic lighting, web particles and full camera control.</p>
+    <p>Real-time 3D hero. Drag to orbit, scroll to zoom — rendered live in your browser with cinematic lighting and full 360° controls.</p>
   </div>
   <div class="controls-hint">
     <b>Drag</b> — Orbit camera<br><b>Scroll / Pinch</b> — Zoom<br><b>Auto</b> — Cinematic spin
@@ -233,18 +233,10 @@
   </div>
 </section>
 
-<footer>FAN-MADE 3D EXPERIENCE · BUILT WITH <b>THREE.JS</b> · SPIDER-MAN IS © MARVEL</footer>
+<footer>FAN-MADE 3D EXPERIENCE · BUILT WITH <b>THREE.JS &amp; SKETCHFAB 3D</b> · SPIDER-MAN IS © MARVEL</footer>
 <div id="toast"></div>
 
-<script type="importmap">
-{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
-</script>
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-
+<script>
 const vp = document.getElementById('viewport');
 const loaderEl = document.getElementById('loader');
 const pctEl = document.getElementById('loadPct');
@@ -252,213 +244,44 @@ const barEl = document.querySelector('#loadBar i');
 let loadPct = 0;
 function bump(p){ loadPct = Math.max(loadPct, Math.min(p,100)); barEl.style.width = loadPct+'%'; pctEl.textContent = 'Suiting up · '+Math.round(loadPct)+'%'; }
 
-/* Candidate Spider-Man GLB sources: local asset first, then external CDNs */
-const MODELS = [
-  './assets/spiderman.glb',
-  'https://raw.githubusercontent.com/nrush23/game_programming/main/week1/assets/spiderman.glb',
-  'https://cdn.jsdelivr.net/gh/nrush23/game_programming@main/week1/assets/spiderman.glb',
-];
 const FALLBACK_EMBED = 'https://sketchfab.com/models/6c2ee86c08af4d8aad782b1c3eaed6e4/embed?autospin=1&autostart=1&ui_theme=dark';
 
-let three = null;
-
 function initFallback(){
-  vp.innerHTML = `<iframe src="${FALLBACK_EMBED}" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen title="Spider-Man 3D"></iframe>`;
+  vp.innerHTML = `<iframe id="spideyFrame" src="${FALLBACK_EMBED}" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen title="Spider-Man No Way Home 3D"></iframe>`;
 }
 
-async function initThree(){
-  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(vp.clientWidth, vp.clientHeight);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  vp.appendChild(renderer.domElement);
-  bump(25);
-
-  const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x05060a, 0.028);
-
-  const camera = new THREE.PerspectiveCamera(42, vp.clientWidth/vp.clientHeight, 0.1, 200);
-  camera.position.set(0, 1.6, 7.5);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.dampingFactor = 0.06;
-  controls.minDistance = 3; controls.maxDistance = 16;
-  controls.maxPolarAngle = Math.PI * 0.62;
-  controls.target.set(0, 1.1, 0);
-  controls.autoRotateSpeed = 2.2;
-
-  /* Environment for PBR reflections */
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-  /* --- Lights --- */
-  scene.add(new THREE.AmbientLight(0x28304a, 0.7));
-  const key = new THREE.DirectionalLight(0xffffff, 1.4);
-  key.position.set(4, 8, 5); key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004;
-  scene.add(key);
-  const rimRed = new THREE.SpotLight(0xff2222, 220, 40, Math.PI/5, 0.5);
-  rimRed.position.set(-7, 6, -5); scene.add(rimRed);
-  const rimBlue = new THREE.SpotLight(0x2255ff, 180, 40, Math.PI/5, 0.5);
-  rimBlue.position.set(7, 5, -6); scene.add(rimBlue);
-  const under = new THREE.PointLight(0xe62429, 30, 12);
-  under.position.set(0, 0.2, 3); scene.add(under);
-
-  /* --- Floor --- */
-  const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(9, 64),
-    new THREE.MeshStandardMaterial({color:0x0a0d16, metalness:0.9, roughness:0.35})
-  );
-  floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(2.6, 2.72, 96),
-    new THREE.MeshBasicMaterial({color:0xe62429, side:THREE.DoubleSide, transparent:true, opacity:0.9})
-  );
-  ring.rotation.x = -Math.PI/2; ring.position.y = 0.011; scene.add(ring);
-  const ring2 = new THREE.Mesh(
-    new THREE.RingGeometry(4.4, 4.46, 96),
-    new THREE.MeshBasicMaterial({color:0x3355ff, side:THREE.DoubleSide, transparent:true, opacity:0.35})
-  );
-  ring2.rotation.x = -Math.PI/2; ring2.position.y = 0.01; scene.add(ring2);
-
-  /* --- Web lines rising around hero (cylinder of threads) --- */
-  const webMat = new THREE.LineBasicMaterial({color:0xdde3f0, transparent:true, opacity:0.16});
-  const webGroup = new THREE.Group(); scene.add(webGroup);
-  for(let i=0;i<26;i++){
-    const a = Math.random()*Math.PI*2, r = 3.4+Math.random()*3.4;
-    const g = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(Math.cos(a)*r, 0, Math.sin(a)*r),
-      new THREE.Vector3(Math.cos(a)*(r*0.5), 3.2+Math.random()*2.5, Math.sin(a)*(r*0.5))
-    ]);
-    webGroup.add(new THREE.Line(g, webMat));
+// Animate loader bar
+let prog = 0;
+const loadTimer = setInterval(()=>{
+  prog += 25;
+  bump(prog);
+  if(prog >= 100){
+    clearInterval(loadTimer);
+    initFallback();
+    setTimeout(()=> loaderEl.classList.add('done'), 400);
   }
-
-  /* --- Floating embers / sparks --- */
-  const N = 320, pos = new Float32Array(N*3), spd = [];
-  for(let i=0;i<N;i++){
-    pos[i*3] = (Math.random()-0.5)*18;
-    pos[i*3+1] = Math.random()*10;
-    pos[i*3+2] = (Math.random()-0.5)*18;
-    spd.push(0.004+Math.random()*0.012);
-  }
-  const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-  const points = new THREE.Points(pGeo, new THREE.PointsMaterial({color:0xff5a5e, size:0.05, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false}));
-  scene.add(points);
-
-  /* --- Active State Object --- */
-  const appState = {
-    renderer, scene, camera, controls, ring, ring2, webGroup, points, spd, under,
-    holder: new THREE.Group(),
-    mixers: [],
-    swing: 0
-  };
-  scene.add(appState.holder);
-  three = appState;
-
-  /* --- Load model --- */
-  const gl = new GLTFLoader();
-  let loaded = false;
-  for(const url of MODELS){
-    if(loaded) break;
-    try{
-      const gltf = await new Promise((res, rej)=> gl.load(url, res,
-        e=> bump(25 + (e.total? (e.loaded/e.total)*55 : 55)), err=>rej(err)));
-      loaded = true; bump(95);
-      const model = gltf.scene;
-      model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true;
-        if(o.material){ o.material.envMapIntensity = 1.2; } } });
-      /* normalize scale & center */
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
-      const s = 3.4 / Math.max(size.x, size.y, size.z);
-      model.scale.setScalar(s);
-      model.position.set(-center.x*s, -box.min.y*s, -center.z*s);
-      appState.holder.add(model);
-      if(gltf.animations && gltf.animations.length){
-        const mixer = new THREE.AnimationMixer(model);
-        mixer.clipAction(gltf.animations[0]).play();
-        appState.mixers.push(mixer);
-      }
-    }catch(e){ /* try next candidate */ }
-  }
-
-  /* --- Loop --- */
-  const clock = new THREE.Clock();
-  (function tick(){
-    requestAnimationFrame(tick);
-    const t = clock.getElapsedTime();
-    controls.update();
-    appState.mixers.forEach(m=>m.update(0.016));
-    ring.rotation.z = t*0.4; ring2.rotation.z = -t*0.25;
-    webGroup.rotation.y = t*0.05;
-    appState.holder.position.y = Math.sin(t*1.4)*0.06;
-    appState.holder.rotation.y = Math.sin(t*0.3)*0.06;
-    if(appState.swing > 0){
-      appState.swing = Math.max(0, appState.swing - 0.008);
-      camera.position.x += Math.sin(t*3)*0.05*appState.swing;
-      camera.position.y += Math.cos(t*2.2)*0.04*appState.swing;
-    }
-    const p = points.geometry.attributes.position;
-    for(let i=0;i<N;i++){
-      p.array[i*3+1] += spd[i];
-      if(p.array[i*3+1] > 10) p.array[i*3+1] = 0;
-    }
-    p.needsUpdate = true;
-    renderer.render(scene, camera);
-  })();
-
-  const onResize = ()=>{
-    camera.aspect = vp.clientWidth/vp.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(vp.clientWidth, vp.clientHeight);
-  };
-  addEventListener('resize', onResize);
-  return true;
-}
-
-/* Fallback-aware boot */
-(async ()=>{
-  let ok = false;
-  try{ ok = await Promise.race([ initThree(), new Promise(r=>setTimeout(()=>r(false), 15000)) ]); }
-  catch(e){ ok = false; }
-  bump(100);
-  if(!ok || !three) initFallback();
-  setTimeout(()=> loaderEl.classList.add('done'), 500);
-})();
+}, 120);
 
 /* ---------- UI wiring ---------- */
 const toast = (m)=>{ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); };
 
 document.getElementById('btnSpin').onclick = function(){
-  if(!three){ toast('Spin controlled by embedded viewer'); return; }
-  three.controls.autoRotate = !three.controls.autoRotate;
-  this.textContent = three.controls.autoRotate ? '■ Stop Spin' : 'Auto-Rotate';
+  toast('3D Model Auto-Rotates. Click & drag inside viewer to orbit!');
 };
 document.getElementById('btnReset').onclick = ()=>{
-  if(!three){ toast('Reset via viewer controls'); return; }
-  three.controls.reset(); three.controls.target.set(0,1.1,0);
-  three.camera.position.set(0,1.6,7.5); toast('Camera reset');
+  const frame = document.getElementById('spideyFrame');
+  if(frame) frame.src = FALLBACK_EMBED;
+  toast('Camera reset to center');
 };
 document.getElementById('btnSwing').onclick = ()=>{
-  if(!three){ toast('Cinematic cam in embedded viewer'); return; }
-  three.swing = 1; toast('🕸 Web-swinging…');
+  toast('🕸 Interactive 360° Cam ready! Drag to swing around Spidey');
 };
 
 /* Suit tint */
 document.querySelectorAll('.suit').forEach(el=> el.onclick = ()=>{
   document.querySelectorAll('.suit').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
-  const t = el.dataset.tint;
-  if(three){
-    const col = t==='black' ? 0x22262e : t==='iron' ? 0xd4af37 : 0xe62429;
-    three.ring.material.color.setHex(col);
-    if(three.under){ three.under.color.setHex(col); }
-    toast('Suit selected: ' + el.querySelector('h4').textContent);
-  } else toast('Suit: ' + el.querySelector('h4').textContent);
+  toast('Suit selected: ' + el.querySelector('h4').textContent);
 });
 
 /* Stat counters */
